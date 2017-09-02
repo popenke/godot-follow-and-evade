@@ -1,69 +1,88 @@
-extends Node2D
+extends KinematicBody2D
 
-var energy = 100
+var soda = 100
 var water = 100
+var speed = 1
 var amIAlive
-
-var waterBottle
-var sodaBottle
 
 signal robotStatusChanged
 
 func _ready():
+	add_to_group("robot")
 	amIAlive = true
-	
-	waterBottle = get_node("/root/Game/Water")
-	sodaBottle = get_node("/root/Game/Soda")
-	
-	set_process(true)
+	set_fixed_process(true)
 
-func _process(delta):
+func _fixed_process(delta):
 	checkLife()
 	if !amIAlive:
 		get_node(".").queue_free()
 	
-	if water < energy:
-		searchFor("Water")
 	
-	if energy < water:
-		searchFor("Energy")
+	if water < soda:
+		searchFor("water", delta)
+	
+	if soda < water:
+		searchFor("soda", delta)
+	
+	if is_colliding():
+		if get_collider().is_in_group("water"):
+			drinkWater()
+		
+		if get_collider().is_in_group("soda"):
+			drinkSoda()
+
+
 
 func checkLife():
-	if energy <= 0 || water <= 0:
+	if soda <= 0 || water <= 0:
 		amIAlive = false
 		return amIAlive
 
 func loseLife():
 	# Drains life and water from the robot when is called
-	energy -= 2
+	soda -= 2
 	water -= 4
 	
 	# Emits signal to refresh label
-	emit_signal("robotStatusChanged", energy, water)
+	emit_signal("robotStatusChanged", soda, water)
 
 func _on_Timer_timeout():
 	# Robot must lose life every second
 	loseLife()
 
 func drinkSoda():
-	energy = 100
+	soda = 100
 
 func drinkWater():
 	water = 100
 
-func searchFor(need):
-	# Search for water or energy accordingly with the need
-	if need == "Water":
-		# TODO: Check if there is any resource on scene
-		var waterPositionX = waterBottle.get("positionX")
-		var waterPositionY = waterBottle.get("positionY")
+func searchFor(need, delta):
+	# Search for water or soda accordingly with the need
+	if need == "water":
+		var waterPosition
+		var robotPosition = get_pos()
+		var targetPosition
 		
-		print("waterX: ", waterPositionX)
-		print("waterY: ", waterPositionY)
+		for waterBottle in get_tree().get_nodes_in_group("water"):
+			waterPosition = waterBottle.get("position")
+		
+		if robotPosition != waterPosition:
+			targetPosition = waterPosition - get_pos()
+			robotPosition += targetPosition * speed * delta
+			move_to(robotPosition)
+			set_pos(robotPosition)
 	
-	if need == "Soda":
-		var sodaPositionX = sodaBottle.get("positionX")
-		var sodaPositionY = sodaBottle.get("positionY")
+	
+	if need == "soda":
+		var sodaPosition
+		var robotPosition = get_pos()
+		var targetPosition
 		
-		print("sodaX: ", sodaPositionX)
-		print("sodaY: ", sodaPositionY)
+		for sodaBottle in get_tree().get_nodes_in_group("soda"):
+			sodaPosition = sodaBottle.get("position")
+		
+		if robotPosition != sodaPosition:
+			targetPosition = sodaPosition - get_pos()
+			robotPosition += targetPosition * speed * delta
+			move_to(robotPosition)
+			set_pos(robotPosition)

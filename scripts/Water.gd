@@ -1,11 +1,9 @@
-extends Node2D
+extends StaticBody2D
 
-var positionX
-var positionY
+var position
 
 func _ready():
-	positionX = get_pos().x
-	positionY = get_pos().y
+	position = get_pos()
 
 func _on_Timer_timeout():
 	get_node(".").queue_free()
